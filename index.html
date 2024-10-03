@@ -4,10 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ESP32 LED Control via Bluetooth</title>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-    button { padding: 10px 20px; margin: 10px; font-size: 16px; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h1>Control ESP32 LED via Bluetooth</h1>
@@ -15,6 +12,7 @@
   <button id="connect">Connect to ESP32</button>
   <button id="on" disabled>Turn LED ON</button>
   <button id="off" disabled>Turn LED OFF</button>
+  <div class="status" id="status"></div>
 
   <script>
     let bleDevice;
@@ -25,44 +23,43 @@
 
     document.getElementById('connect').addEventListener('click', async () => {
       try {
-        // Request device with Bluetooth GATT service
         bleDevice = await navigator.bluetooth.requestDevice({
           filters: [{ services: [serviceUuid] }]
         });
 
-        // Connect to the GATT server
         const server = await bleDevice.gatt.connect();
         const service = await server.getPrimaryService(serviceUuid);
         bleCharacteristic = await service.getCharacteristic(characteristicUuid);
 
         document.getElementById('on').disabled = false;
         document.getElementById('off').disabled = false;
-
-        alert("Connected to ESP32!");
+        updateStatus("Connected to ESP32!");
 
       } catch (error) {
         console.error(error);
-        alert('Failed to connect to ESP32: ' + error.message);
+        updateStatus('Failed to connect to ESP32: ' + error.message);
       }
     });
 
     document.getElementById('on').addEventListener('click', async () => {
       if (bleCharacteristic) {
-        // Write "1" to the characteristic to turn on the LED
         const encoder = new TextEncoder();
         await bleCharacteristic.writeValue(encoder.encode("1"));
-        alert("LED Turned ON");
+        updateStatus("LED Turned ON");
       }
     });
 
     document.getElementById('off').addEventListener('click', async () => {
       if (bleCharacteristic) {
-        // Write "0" to the characteristic to turn off the LED
         const encoder = new TextEncoder();
         await bleCharacteristic.writeValue(encoder.encode("0"));
-        alert("LED Turned OFF");
+        updateStatus("LED Turned OFF");
       }
     });
+
+    function updateStatus(message) {
+      document.getElementById('status').innerText = message;
+    }
   </script>
 </body>
 </html>
