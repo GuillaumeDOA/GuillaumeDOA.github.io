@@ -1,64 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Temperature Control Panel</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP32 LED Control via Bluetooth</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+    button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+  </style>
 </head>
-
 <body>
+  <h1>Control ESP32 LED via Bluetooth</h1>
+  
+  <button id="connect">Connect to ESP32</button>
+  <button id="on" disabled>Turn LED ON</button>
+  <button id="off" disabled>Turn LED OFF</button>
 
-    <div class="container">
-        <div class="temperature-display" id="tempDisplay">22°C</div>
-        <button class="control-btn" onclick="toggleControl()">Toggle LED</button>
-        <button class="control-btn" onclick="connectToESP32()">Connect to ESP32</button>
-    </div>
-    <footer>
-        <p>&copy; Guillaume de Oliveira Andrezo | <a href="https://google.com" target="_blank">Source</a></p>
-    </footer>
+  <script>
+    let bleDevice;
+    let bleCharacteristic;
 
+    const serviceUuid = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";  // Replace with your service UUID
+    const characteristicUuid = "beb5483e-36e1-4688-b7f5-ea07361b26a8";  // Replace with your characteristic UUID
 
-    <script>
+    document.getElementById('connect').addEventListener('click', async () => {
+      try {
+        // Request device with Bluetooth GATT service
+        bleDevice = await navigator.bluetooth.requestDevice({
+          filters: [{ services: [serviceUuid] }]
+        });
 
-        const tempDisplay = document.getElementById('tempDisplay');
+        // Connect to the GATT server
+        const server = await bleDevice.gatt.connect();
+        const service = await server.getPrimaryService(serviceUuid);
+        bleCharacteristic = await service.getCharacteristic(characteristicUuid);
 
-        // Function to toggle a device
-        function toggleControl() {
-            alert('Device toggled!');
-        }
+        document.getElementById('on').disabled = false;
+        document.getElementById('off').disabled = false;
 
-        // Function to connect to the ESP32 via Bluetooth
-        async function connectToESP32() {
-            try {
-                const device = await navigator.bluetooth.requestDevice({
-                    filters: [{ services: ['0af115cc-3a36-4a2d-ae32-9e57bfeb2a0d'] }] // Filter to match the ESP32 service (use correct service UUIDs here)
-                });
+        alert("Connected to ESP32!");
 
-                const server = await device.gatt.connect();
-                const service = await server.getPrimaryService('0af115cc-3a36-4a2d-ae32-9e57bfeb2a0d'); // Replace with your ESP32 service UUID
-                const characteristic = await service.getCharacteristic('272b9c5c-3264-4622-a5d3-5b068b3bb5ee'); // Replace with your ESP32 characteristic UUID
+      } catch (error) {
+        console.error(error);
+        alert('Failed to connect to ESP32: ' + error.message);
+      }
+    });
 
-                characteristic.startNotifications();
-                characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicValueChanged);
+    document.getElementById('on').addEventListener('click', async () => {
+      if (bleCharacteristic) {
+        // Write "1" to the characteristic to turn on the LED
+        const encoder = new TextEncoder();
+        await bleCharacteristic.writeValue(encoder.encode("1"));
+        alert("LED Turned ON");
+      }
+    });
 
-                console.log('Connected to ESP32!');
-
-            } catch (error) {
-                console.error('Bluetooth connection failed:', error);
-            }
-        }
-
-        function handleCharacteristicValueChanged(event) {
-            const value = new TextDecoder().decode(event.target.value.buffer);
-            console.log('Sensor Value:', value);
-
-            // Update the displayed temperature with the sensor value
-            tempDisplay.textContent = `${value}°C`;
-        }
-    </script>
-
+    document.getElementById('off').addEventListener('click', async () => {
+      if (bleCharacteristic) {
+        // Write "0" to the characteristic to turn off the LED
+        const encoder = new TextEncoder();
+        await bleCharacteristic.writeValue(encoder.encode("0"));
+        alert("LED Turned OFF");
+      }
+    });
+  </script>
 </body>
-
 </html>
