@@ -115,7 +115,7 @@
     }
 
     function handleSensorValueChanged(event) {
-      const value = event.target.value.getInt16(0, true); // Assumes a 16-bit integer
+      const value = event.target.value.getInt32(0, true); // Assumes a 16-bit integer
       document.getElementById('sensorValue').innerText = `Sensor Value: ${value}`;
     }
   </script>
