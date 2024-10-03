@@ -6,13 +6,19 @@
   <title>ESP32 LED Control via Bluetooth</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <h1>Control ESP32 LED via Bluetooth</h1>
+
+  <div class="container">
+      <div class="temperature-display" id="tempDisplay">22°C</div>
+      <button id="on" disabled>Turn LED ON</button>
+      <button id="off" disabled>Turn LED OFF</button>
+      <button id="connect">Connect to ESP32</button>
+  </div>
   
-  <button id="connect">Connect to ESP32</button>
-  <button id="on" disabled>Turn LED ON</button>
-  <button id="off" disabled>Turn LED OFF</button>
-  <div class="status" id="status"></div>
+  <footer>
+      <p>&copy; 2024 Your Name | <a href="https://example.com" target="_blank">Source</a></p>
+  </footer>
 
   <script>
     let bleDevice;
