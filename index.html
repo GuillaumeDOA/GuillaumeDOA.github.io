@@ -13,18 +13,49 @@
     <div class="container">
         <div class="temperature-display" id="tempDisplay">22°C</div>
         <button class="control-btn" onclick="toggleControl()">Toggle LED</button>
+        <button class="control-btn" onclick="connectToESP32()">Connect to ESP32</button>
     </div>
     <footer>
         <p>&copy; Guillaume de Oliveira Andrezo | <a href="https://google.com" target="_blank">Source</a></p>
     </footer>
-    
+
 
     <script>
+
         const tempDisplay = document.getElementById('tempDisplay');
 
-        // Function to toggle a device (e.g., turn on/off something)
+        // Function to toggle a device
         function toggleControl() {
             alert('Device toggled!');
+        }
+
+        // Function to connect to the ESP32 via Bluetooth
+        async function connectToESP32() {
+            try {
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: ['0af115cc-3a36-4a2d-ae32-9e57bfeb2a0d'] }] // Filter to match the ESP32 service (use correct service UUIDs here)
+                });
+
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService('0af115cc-3a36-4a2d-ae32-9e57bfeb2a0d'); // Replace with your ESP32 service UUID
+                const characteristic = await service.getCharacteristic('272b9c5c-3264-4622-a5d3-5b068b3bb5ee'); // Replace with your ESP32 characteristic UUID
+
+                characteristic.startNotifications();
+                characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicValueChanged);
+
+                console.log('Connected to ESP32!');
+
+            } catch (error) {
+                console.error('Bluetooth connection failed:', error);
+            }
+        }
+
+        function handleCharacteristicValueChanged(event) {
+            const value = new TextDecoder().decode(event.target.value.buffer);
+            console.log('Sensor Value:', value);
+
+            // Update the displayed temperature with the sensor value
+            tempDisplay.textContent = `${value}°C`;
         }
     </script>
 
