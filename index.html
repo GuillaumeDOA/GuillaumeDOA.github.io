@@ -1,32 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ESP32 LED Control via Bluetooth</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      color: #4a90e2;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 18px;
+      color: white;
+      background-color: #4a90e2;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #357ab8;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .status {
+      font-size: 20px;
+      margin-top: 20px;
+      color: #666;
+    }
+    .sensor-value {
+      font-size: 24px;
+      margin-top: 20px;
+      color: #e94e77;
+    }
+  </style>
 </head>
-
 <body>
-
-  <div class="container">
-    <div class="temperature-display" id="tempDisplay">22°C</div>
-    <button class="control-btn" id="on" disabled>Turn LED ON</button>
-    <button class="control-btn" id="off" disabled>Turn LED OFF</button>
-    <button class="control-btn" id="connect">Connect to ESP32</button>
-  </div>
-
-  <footer>
-    <p>&copy; 2024 Your Name | <a href="https://example.com" target="_blank">Source</a></p>
-  </footer>
+  <h1>Control ESP32 LED via Bluetooth</h1>
+  
+  <button id="connect">Connect to ESP32</button>
+  <button id="on" disabled>Turn LED ON</button>
+  <button id="off" disabled>Turn LED OFF</button>
+  <div class="status" id="status"></div>
+  <div class="sensor-value" id="sensorValue">Sensor Value: N/A</div>
 
   <script>
     let bleDevice;
     let bleCharacteristic;
+    let sensorCharacteristic;
 
     const serviceUuid = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";  // Replace with your service UUID
     const characteristicUuid = "beb5483e-36e1-4688-b7f5-ea07361b26a8";  // Replace with your characteristic UUID
+    const sensorUuid = "f85a4c62-36e1-4688-b7f5-ea07361b26a8";  // Replace with your sensor UUID
 
     document.getElementById('connect').addEventListener('click', async () => {
       try {
@@ -37,9 +77,15 @@
         const server = await bleDevice.gatt.connect();
         const service = await server.getPrimaryService(serviceUuid);
         bleCharacteristic = await service.getCharacteristic(characteristicUuid);
+        sensorCharacteristic = await service.getCharacteristic(sensorUuid);
 
         document.getElementById('on').disabled = false;
         document.getElementById('off').disabled = false;
+
+        // Start listening for notifications from the sensor characteristic
+        sensorCharacteristic.startNotifications();
+        sensorCharacteristic.addEventListener('characteristicvaluechanged', handleSensorValueChanged);
+
         updateStatus("Connected to ESP32!");
 
       } catch (error) {
@@ -67,7 +113,11 @@
     function updateStatus(message) {
       document.getElementById('status').innerText = message;
     }
+
+    function handleSensorValueChanged(event) {
+      const value = event.target.value.getInt16(0, true); // Assumes a 16-bit integer
+      document.getElementById('sensorValue').innerText = `Sensor Value: ${value}`;
+    }
   </script>
 </body>
-
 </html>
